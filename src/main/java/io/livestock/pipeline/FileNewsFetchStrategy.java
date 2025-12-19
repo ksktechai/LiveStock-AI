@@ -29,6 +29,7 @@ public class FileNewsFetchStrategy implements NewsFetchStrategy {
                 ClassPathResource resource = new ClassPathResource("news-mock-data.json");
                 NewsApiResponse apiResponse = objectMapper.readValue(resource.getInputStream(), NewsApiResponse.class);
                 sink.next(apiResponse.articles());
+                sink.complete();
             } catch (Exception e) {
                 logger.error("Failed to read mock news data", e);
                 // In mock mode, if file fails, we might just emit empty list or error

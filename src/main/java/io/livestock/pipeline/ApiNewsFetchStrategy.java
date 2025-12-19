@@ -26,12 +26,17 @@ public class ApiNewsFetchStrategy implements NewsFetchStrategy {
     private final ObjectMapper objectMapper;
     private int currentCategoryIndex = 0;
 
+    @org.springframework.beans.factory.annotation.Autowired
     public ApiNewsFetchStrategy(
             @Value("${news.api.key}") String apiKey,
             ObjectMapper objectMapper) {
+        this(apiKey, objectMapper, HttpClient.newHttpClient());
+    }
+
+    public ApiNewsFetchStrategy(String apiKey, ObjectMapper objectMapper, HttpClient httpClient) {
         this.apiKey = apiKey;
         this.objectMapper = objectMapper;
-        this.httpClient = HttpClient.newHttpClient();
+        this.httpClient = httpClient;
     }
 
     @Override
@@ -58,22 +63,29 @@ public class ApiNewsFetchStrategy implements NewsFetchStrategy {
                 if (response.statusCode() == 200) {
                     processResponse(response.body(), sink);
                 } else {
-                    logger.error("News API Error: Status {}", response.statusCode());
+                    logger.error("News API Error: {} Status {}", response, response.statusCode());
                     sink.error(new RuntimeException("API Error: " + response.statusCode()));
                 }
             } catch (Exception e) {
                 logger.error("News API Exception", e);
                 sink.error(e); // Propagate error but don't stop the flux forever (retry handled upstream if
-                               // any)
+                // any)
             }
         });
     }
 
+    /**
+     * Process the response from the News API and emit articles to the sink.
+     *
+     * @param body The response body as a string.
+     * @param sink The sink to emit articles to.
+     */
     private void processResponse(String body, reactor.core.publisher.FluxSink<List<Article>> sink) {
         try {
-            logger.info("Received News API Response: Content-Length: {}", body.length());
+            logger.info("Received News API Response: {} Content-Length: {}", body, body.length());
             NewsApiResponse apiResponse = objectMapper.readValue(body, NewsApiResponse.class);
             sink.next(apiResponse.articles());
+            sink.complete();
         } catch (Exception e) {
             sink.error(e);
         }

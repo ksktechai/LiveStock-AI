@@ -13,7 +13,7 @@ import reactor.core.publisher.Sinks;
 @Service
 public class NewsPipeline {
 
-    private final NewsAiAnalyzer analyzer;
+    private final NewsAiAnalyzer newsAiAnalyzer;
 
     // incoming items
     private final Sinks.Many<NewsItem> ingestSink = Sinks.many().multicast().onBackpressureBuffer();
@@ -24,14 +24,14 @@ public class NewsPipeline {
     /**
      * Constructor.
      *
-     * @param analyzer The NewsAiAnalyzer instance to use for analysis.
+     * @param newsAiAnalyzer The NewsAiAnalyzer instance to use for analysis.
      */
-    public NewsPipeline(NewsAiAnalyzer analyzer) {
-        this.analyzer = analyzer;
+    public NewsPipeline(NewsAiAnalyzer newsAiAnalyzer) {
+        this.newsAiAnalyzer = newsAiAnalyzer;
 
         // Build the pipeline once:
         ingestSink.asFlux()
-                .flatMap(analyzer::analyze, 8) // parallelism
+                .flatMap(newsAiAnalyzer::analyze, 8) // parallelism
                 .doOnNext(analysisSink::tryEmitNext)
                 .subscribe();
     }

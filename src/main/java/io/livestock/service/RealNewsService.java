@@ -1,8 +1,9 @@
-package io.livestock.pipeline;
+package io.livestock.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.livestock.domain.NewsItem;
-import io.livestock.domain.NewsModels.*;
+import io.livestock.domain.NewsModels.Article;
+import io.livestock.pipeline.NewsFetchStrategy;
+import io.livestock.pipeline.NewsPipeline;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import reactor.core.Disposable;
@@ -32,7 +33,7 @@ public class RealNewsService {
     private final List<String> processedHeadlines = Collections.synchronizedList(new ArrayList<>());
 
     // Configurable delay for testing
-    private Duration streamingDelay = Duration.ofSeconds(5);
+    private final Duration streamingDelay = Duration.ofSeconds(5);
 
     private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(RealNewsService.class);
 
@@ -61,7 +62,7 @@ public class RealNewsService {
         if (running.get() != null && !running.get().isDisposed())
             return;
 
-        Disposable d = Flux.interval(Duration.ZERO, Duration.ofMinutes(2))
+        Disposable disposable = Flux.interval(Duration.ZERO, Duration.ofMinutes(2))
                 .flatMap(tick -> fetchStrategy.fetchArticles())
                 .map(list -> {
                     // Sort Oldest -> Newest
@@ -76,14 +77,14 @@ public class RealNewsService {
                 .doOnNext(news -> processedHeadlines.add(news.headline()))
                 .subscribe(pipeline::ingest);
 
-        running.set(d);
+        running.set(disposable);
         logger.info("RealNewsService started.");
     }
 
     public synchronized void stop() {
-        Disposable d = running.getAndSet(null);
-        if (d != null) {
-            d.dispose();
+        Disposable disposable = running.getAndSet(null);
+        if (disposable != null) {
+            disposable.dispose();
             logger.info("RealNewsService stopped.");
         }
     }

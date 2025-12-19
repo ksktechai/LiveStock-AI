@@ -4,7 +4,7 @@ import io.livestock.domain.NewsAnalysis;
 import io.livestock.domain.NewsItem;
 import io.livestock.domain.Sentiment;
 import io.livestock.pipeline.NewsPipeline;
-import io.livestock.pipeline.RealNewsService;
+import io.livestock.service.RealNewsService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

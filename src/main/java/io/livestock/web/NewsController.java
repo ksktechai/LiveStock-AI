@@ -3,7 +3,7 @@ package io.livestock.web;
 import io.livestock.domain.FeedStatus;
 import io.livestock.domain.NewsItem;
 import io.livestock.pipeline.NewsPipeline;
-import io.livestock.pipeline.RealNewsService;
+import io.livestock.service.RealNewsService;
 import jakarta.validation.Valid;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
