@@ -1,0 +1,12 @@
+livestock:
+  ai:
+    mode: openai
+
+spring:
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY:}
+      chat:
+        options:
+          model: gpt-5-mini
+          temperature: 0.2

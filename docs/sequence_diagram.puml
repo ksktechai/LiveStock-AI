@@ -1,0 +1,97 @@
+@startuml
+' ========= Global Look =========
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam roundcorner 10
+skinparam defaultFontName Arial
+skinparam participantStyle rectangular
+skinparam BoxPadding 10
+
+skinparam ArrowColor #444444
+skinparam ArrowThickness 1.2
+
+skinparam NoteBackgroundColor #FFF9DB
+skinparam NoteBorderColor #F59F00
+skinparam NoteFontColor #000000
+
+skinparam SequenceGroupBackgroundColor #F8F9FA
+skinparam SequenceGroupBorderColor #CED4DA
+
+' ========= Actor =========
+actor User #E3F2FD
+
+' ========= Participants (Colored) =========
+participant "Frontend (Vite/React)" as UI #E8F5E9
+participant "NewsController" as API #E3F2FD
+participant "NewsPipeline" as Pipeline #FFF3E0
+participant "RealNewsService" as Service #FCE4EC
+participant "NewsAPIService" as NewsAPI #EDE7F6
+participant "NewsAiAnalyzer" as AI #FFEBEE
+participant "OllamaChatModel" as LLM #E0F7FA
+
+' ========= Lifeline =========
+skinparam sequence {
+  LifeLineBorderColor #ADB5BD
+  LifeLineBackgroundColor white
+  LifeLineActiveColor #74C0FC
+  LifeLineActiveBorderColor #1C7ED6
+}
+
+== Initialization ==
+activate Pipeline
+Pipeline -> Pipeline : ingestSink.asFlux()\n.flatMap(analyze)\n.subscribe(analysisSink)
+note right of Pipeline
+Pipeline built and listening
+end note
+deactivate Pipeline
+
+== 1. Client Connection (SSE) ==
+User -> UI : Open Page
+UI -> API : GET /api/stream
+activate API
+API -> Pipeline : stream()
+Pipeline --> API : Flux<NewsAnalysis>\n(from analysisSink)
+API --> UI : 200 OK\n(text/event-stream)
+deactivate API
+
+note right of UI
+Connection Open
+Replay (Last 50 items) sent immediately
+end note
+
+== 2. Async Data Ingestion Loop (Every 2 mins) ==
+loop Scheduler Interval
+    Service -> NewsAPI : fetchBusinessHeadlines()
+    activate Service
+    NewsAPI --> Service : List<Article>
+    Service -> Service : Deduplicate & Sort\n(Oldest → Newest)
+
+    loop For Each NewsItem
+        Service -> Pipeline : ingest(item)
+        activate Pipeline
+        Pipeline -> Pipeline : ingestSink.tryEmitNext(item)
+        deactivate Service
+
+        par Parallel Processing (width=8)
+            Pipeline -> AI : analyze(item)
+            activate AI
+            AI -> LLM : call(prompt)
+            activate LLM
+            LLM --> AI : Sentiment & Risk
+            deactivate LLM
+
+            AI --> Pipeline : NewsAnalysis
+            deactivate AI
+
+            Pipeline -> Pipeline : analysisSink.tryEmitNext(event)
+            note right of Pipeline
+            Multicast to all SSE subscribers
+            end note
+
+            Pipeline --> UI : SSE Event (JSON)
+            UI -> User : Update Feed
+        end
+    end
+    deactivate Pipeline
+end
+@enduml
