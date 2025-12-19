@@ -1,4 +1,4 @@
-package io.livestock.web;
+package io.livestock.service;
 
 import io.livestock.domain.NewsModels.MarketNews;
 import io.livestock.domain.NewsModels.SentimentAnalysis;
