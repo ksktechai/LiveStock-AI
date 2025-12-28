@@ -1,6 +1,6 @@
 # LiveStock AI — Real-Time Financial News Analyst
 
-![Build](https://github.com/ksktechai/LiveStock-AI/actions/workflows/build.yml/badge.svg)
+![Build Badge](https://github.com/ksktechai/LiveStock-AI/actions/workflows/ci.yml/badge.svg)
 
 
 A real-time financial news dashboard that streams live news, analyzes sentiment using a local LLM (Ollama), and displays it with a premium UI.
